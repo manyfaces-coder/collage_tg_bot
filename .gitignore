@@ -2,5 +2,10 @@ collage_picture
 columns
 p
 rows
+final
 venv
 p.py
+.env
+venv
+virtualenv
+admin_functions.py

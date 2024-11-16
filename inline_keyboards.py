@@ -5,6 +5,7 @@ random_site_cb_data = "random_site_cb_data"
 start_make_collage = "start_make_collage"
 next_inline_kb = "next_inline_kb"
 start_choose_collage = "start_choose_collage"
+main_inline_kb = 'main_inline_kb'
 
 
 def build_info_kb() -> InlineKeyboardMarkup:
@@ -25,7 +26,8 @@ def build_info_kb() -> InlineKeyboardMarkup:
 
     return markup_inline
 
-def main_inline_kb()-> InlineKeyboardMarkup:
+
+def main_inline_kb() -> InlineKeyboardMarkup:
     make_collage = InlineKeyboardButton(
         text="Сделать коллаж",
         callback_data=start_choose_collage,
@@ -41,14 +43,16 @@ def main_inline_kb()-> InlineKeyboardMarkup:
 
     return main_markup_inline
 
+
 def subscribe_inline_keyboard(user_id) -> InlineKeyboardMarkup:
     buider = InlineKeyboardBuilder()
     buider.button(text="Телеграм канал",
-         url='https://t.me/mnfcs')
+                  url='https://t.me/mnfcs')
     buider.button(text="Я подписался",
-        callback_data='next_inline_kb', user_id=user_id)
+                  callback_data='next_inline_kb', user_id=user_id)
 
     return buider.as_markup()
+
 
 def ways_collages() -> InlineKeyboardMarkup:
     buider = InlineKeyboardBuilder()
@@ -56,10 +60,10 @@ def ways_collages() -> InlineKeyboardMarkup:
     buider.button(text="Коллаж без интервалов",
                   callback_data=start_make_collage)
 
-    buider.button(text="Задать интервалы",
+    buider.button(text="Коллаж с интервалами",
                   url='https://t.me/asdasdasdasd')
 
+    buider.button(text='Назад ⤴',
+                  callback_data='back_main_inline_kb')
 
     return buider.adjust(1).as_markup()
-
-

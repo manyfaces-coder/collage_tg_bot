@@ -114,5 +114,3 @@ def start(vertical_interval=30, horizontal_interval=30, file_path='original_imag
 if __name__ == "__main__":
     print("start")
     start(vertical_interval=30, horizontal_interval=30)
-
-

@@ -10,7 +10,7 @@ from re import Match
 import main_script
 from inline_keyboards import main_inline_kb
 from routers.common_functions import bot
-from states import Form
+from states import WaitImage
 from aiogram.types import BufferedInputFile
 
 # from aiogram.dispatcher.filters.state import State, StatesGroup
@@ -29,15 +29,13 @@ router = Router(name=__name__)
 
 @router.callback_query(F.data == "start_make_collage")
 async def request_image(callback_query: types.CallbackQuery, state: FSMContext):
-    # await callback_query.answer(callback_query.id)
-    print(state)
-    print(await state.get_state())
-    print("---------")
+    # print(state)
+    # print(await state.get_state())
+    # print("---------")
     await callback_query.answer()
-    await state.set_state(Form.user_image)
-    # await state.(Form.waiting_for_image)
-    print(state)
-    print(await state.get_state())
+    await state.set_state(WaitImage.user_image)
+    # print(state)
+    # print(await state.get_state())
     buider = InlineKeyboardBuilder()
     # await Form.waiting_for_image.set()  # Перевод пользователя в состояние ожидания изображения
     # Добавление кнопки "Отмена" вместо предыдущего сообщения.
@@ -45,26 +43,25 @@ async def request_image(callback_query: types.CallbackQuery, state: FSMContext):
     # markup = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text='Отмена', callback_data='cancel_image'))
     markup = buider.as_markup()
     # await callback_query.edi(text="Пожалуйста, отправьте изображение.", reply_markup=markup)
-    await callback_query.message.edit_text("Пожалуйста, отправьте изображение.", reply_markup = markup)
+    await callback_query.message.edit_text("Пожалуйста, отправьте изображение.", reply_markup=markup)
 
-#Обработчик получения изображения
-@router.message(F.photo, Form.user_image)
+
+# Обработчик получения изображения
+@router.message(F.photo, WaitImage.user_image)
 # @router.message(state=Form.waiting_for_image)
 async def image_received(message: types.Message, state: FSMContext):
-    if await state.get_state() == Form.user_image:
+    if await state.get_state() == WaitImage.user_image:
         await state.update_data(user_image=message.photo)
         await state.clear()  # Выход из состояния
         print('Zdes')
-        print(Form.user_image.state)
-        print(Form.user_image.state.format())
+        print(WaitImage.user_image.state)
+        print(WaitImage.user_image.state.format())
         print(message.photo)
         # print(max(message.photo, key=lambda x: x.file_size))
         file_id = message.photo[-1].file_id
         photo = await bot.get_file(file_id)
 
         # Обработка изображения
-
-
         # Скачиваем файл фотографии в временный файл
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = os.path.join(tmp_dir, 'photo.jpg')
@@ -84,8 +81,8 @@ async def image_received(message: types.Message, state: FSMContext):
             agenda = FSInputFile(result_file_path)
             await bot.send_photo(message.chat.id, agenda)
 
-        await message.reply("Изображение обработанно со стандартными интервалами")
-
+        await message.reply("Изображение обработанно со стандартными интервалами\n"
+                            "\nЧто дальше?", reply_markup=main_inline_kb())
 
 
 # Обработчик нажатия на кнопку "Отмена"
@@ -96,10 +93,11 @@ async def cancel_image(callback_query: types.CallbackQuery, state: FSMContext):
     await state.clear()  # Очистка состояния
     await callback_query.message.edit_text("Отправка изображения отменена.", reply_markup=main_inline_kb())
 
+
 # Обработчик для текста или других типов сообщений в состоянии ожидания изображения
-@router.message(~F.photo, Form.user_image)
+@router.message(~F.photo, WaitImage.user_image)
 async def not_image(message: types.Message, state: FSMContext):
-    if await state.get_state() == Form.user_image:
+    if await state.get_state() == WaitImage.user_image:
         buider = InlineKeyboardBuilder()
         # Предупреждаем пользователя вместе с кнопкой "Отмена"
         buider.button(text='Отмена', callback_data='cancel_image')
@@ -107,6 +105,7 @@ async def not_image(message: types.Message, state: FSMContext):
         await message.reply("Пожалуйста, отправьте изображение, а не текст или другой тип файла.", reply_markup=markup)
     else:
         pass
+
 
 # @router.message(F.photo, ~F.caption)
 # async def handle_photo(message: types.Message):

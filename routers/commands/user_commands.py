@@ -9,3 +9,6 @@ router = Router(name=__name__)
 
 load_dotenv(find_dotenv())
 channel_id = int(os.getenv('channel_id'))
+"""
+пока ненужный файл, был создан при проверке работы функций из обучающих ресурсов
+"""

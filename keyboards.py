@@ -2,10 +2,10 @@ from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 
-class ButtonText:
-    START = "Создать коллаж"
-    HELP = "/help"
-    EXAMPLE = "Показать пример"
+# class ButtonText:
+#     START = "Создать коллаж"
+#     HELP = "/help"
+#     EXAMPLE = "Показать пример"
 
 
 # def get_on_start_kb():
@@ -20,9 +20,8 @@ class ButtonText:
 #     )
 #     return markup
 
-#TODO никак не используем клавиатуру
-def get_on_start_kb():
-    builder = ReplyKeyboardBuilder()
-    builder.row(KeyboardButton(text=ButtonText.START), KeyboardButton(text=ButtonText.HELP))
-    builder.row(KeyboardButton(text=ButtonText.EXAMPLE))
-    return builder.as_markup(resize_keyboard=True)
+# def get_on_start_kb():
+#     builder = ReplyKeyboardBuilder()
+#     builder.row(KeyboardButton(text=ButtonText.START), KeyboardButton(text=ButtonText.HELP))
+#     builder.row(KeyboardButton(text=ButtonText.EXAMPLE))
+#     return builder.as_markup(resize_keyboard=True)

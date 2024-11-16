@@ -4,8 +4,7 @@ from aiogram.filters import CommandStart, Command
 from aiogram.types import CallbackQuery
 from dotenv import load_dotenv, find_dotenv
 
-from inline_keyboards import build_info_kb, main_inline_kb, ways_collages
-from keyboards import ButtonText
+from inline_keyboards import main_inline_kb, ways_collages
 from routers.common_functions import check_sub
 
 load_dotenv(find_dotenv())
@@ -16,46 +15,26 @@ load_dotenv(find_dotenv())
 bot = Bot(token=os.getenv('TOKEN'))
 
 
-#Проверка на бота
+# Проверка на бота
 @router.message(F.from_user.is_bot == True)
 async def handle_bots(message: types.Message):
     return
 
 
-# async def handle_all_messages(message: types.Message):
-#     # Проверяем, подписан ли пользователь на ваш канал
-#     is_subscribed = await bot.get_chat_member(channel_id, message.from_user.id, message.chat.id)
-#
-#     if is_subscribed.status == 'member' or is_subscribed.status == 'creator':
-#         raise
-#     else:
-#         await message.reply("Пожалуйста, подпишитесь на наш канал для доступа к дополнительным возможностям.")
-
-# @router.message(F.text == ButtonText.START)
-#Использована команда /start
+# Использована команда /start
 @router.message(CommandStart())
 async def handle_start(message: types.Message):
-    #если пользователь подписан
+    # если пользователь подписан
     print("НАЖАЛ СТАРТ")
     if await check_sub(channel_id, message.from_user.id, message.chat.id):
         await message.answer(text=f"Привет, {message.from_user.full_name}!", reply_markup=main_inline_kb())
 
 
-@router.message(F.text == ButtonText.HELP)
 @router.message(Command("help", prefix="/"))
 async def handle_help(message: types.Message):
     if await check_sub(channel_id, message.from_user.id, message.chat.id):
         await message.answer(text=f"Задайте вопрос ему: @oljick13")
 
-
-#TODO ненужная функция
-@router.message(Command("info", prefix="/"))
-async def handle_info_command(message: types.Message):
-    markup_inline = build_info_kb()
-    await message.answer(
-        text="Инфа",
-        reply_markup=markup_inline,
-    )
 
 @router.callback_query(F.data == "next_inline_kb")
 async def handle_already_sub_edited(callback_query: CallbackQuery):
@@ -76,3 +55,11 @@ async def handle_already_sub_edited(callback_query: CallbackQuery):
 async def choose_collage(callback_query: CallbackQuery):
     await callback_query.message.edit_text(
         text="Выберите, как хотите сделать коллаж:", reply_markup=ways_collages())
+
+
+# обработка инлайн кнопки "Назад"
+@router.callback_query(F.data == 'back_main_inline_kb')
+async def back_main_inline_kb(callback_query: CallbackQuery):
+    await callback_query.message.edit_text(
+        text='Выберите действие', reply_markup=main_inline_kb()
+    )

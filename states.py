@@ -1,9 +1,10 @@
 from aiogram.fsm.state import StatesGroup, State
 
 
-class WaitImage(StatesGroup):
+class WaitUser(StatesGroup):
     user_image = State()  # Состояние ожидания изображения от пользователя
-    #Нужно состояние для ожидания интервалов выход из которых только после их принятия
-
-class WaitIntervals(StatesGroup):
-    user_intervals = State()
+    use_intervals = State() #Состояние ожидания ответа от пользователя коллпж с какими интервалами ему нужен
+    user_mes = State() #Состояние которое хранит сообщение пользователя, в котором есть обрабатываемое изображение
+    intervals = State() #Состояние ожидание интервалов, хранит интервалы, которые задал пользователь
+    agree_intervals = State() #Состояние, которое нужно, чтобы удостовериться, что пользовател
+                              # согласен с введенными им интервалами

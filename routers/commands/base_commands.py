@@ -4,8 +4,9 @@ from aiogram.filters import CommandStart, Command
 from aiogram.types import CallbackQuery
 from dotenv import load_dotenv, find_dotenv
 
-from inline_keyboards import main_inline_kb, ways_collages
+from inline_keyboards import main_inline_kb, ways_collages, input_intervals
 from routers.common_functions import check_sub
+from aiogram.fsm.context import FSMContext
 
 load_dotenv(find_dotenv())
 channel_id = int(os.getenv('channel_id'))
@@ -57,9 +58,18 @@ async def choose_collage(callback_query: CallbackQuery):
         text="Выберите, как хотите сделать коллаж:", reply_markup=ways_collages())
 
 
-# обработка инлайн кнопки "Назад"
+# обработка инлайн кнопки "Назад к главному выбору"
 @router.callback_query(F.data == 'back_main_inline_kb')
-async def back_main_inline_kb(callback_query: CallbackQuery):
+async def back_main_inline_kb(callback_query: CallbackQuery, state: FSMContext):
+    await state.clear()
     await callback_query.message.edit_text(
         text='Выберите действие', reply_markup=main_inline_kb()
+    )
+
+
+@router.callback_query(F.data == 'close_about_intervals')
+async def close_about_intervals(callback_query: CallbackQuery):
+    await callback_query.message.edit_text(
+        text='Введите два обычных целых числа через пробел или любой другой символ',
+        reply_markup=input_intervals()
     )

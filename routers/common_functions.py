@@ -13,8 +13,10 @@ channel_id = int(os.getenv('channel_id'))
 async def check_sub(channel_id, user_id, chat_id):
     # Проверяем, подписан ли пользователь на канал
     is_subscribed = await bot.get_chat_member(chat_id=channel_id, user_id=user_id)
-
-    if is_subscribed.status == 'member' or is_subscribed.status == 'creator':
+    print()
+    print(is_subscribed.status)
+    if is_subscribed.status == 'member' or is_subscribed.status == 'creator' \
+            or is_subscribed.status == 'administrator':
         return True
     else:
         markup = subscribe_inline_keyboard(user_id)
@@ -25,10 +27,10 @@ async def check_sub(channel_id, user_id, chat_id):
 @router.message(F.voice)
 async def handle_video_message(message: types.Message):
     await message.answer("Да зачем мне эти штуки, я ниче кроме картинок не понимаю яжебот, лучше денег скинь:"
-                         " 5536913844247300")
+                         f" {os.getenv('CARD_NUMB')}")
 
 
-@router.message()
+@router.message(~F.photo)
 async def handle_unknown_message(message: types.Message):
     if await check_sub(channel_id, message.from_user.id, message.chat.id):
         markup = main_inline_kb()

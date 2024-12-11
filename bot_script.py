@@ -18,7 +18,6 @@ from routers.photo_handlers import router
 # another_media = F.video | F.document | F.audio
 # image_received = None
 
-
 async def main():
     load_dotenv(find_dotenv())
     bot = Bot(token=os.getenv('TOKEN'))

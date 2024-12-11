@@ -1,36 +1,11 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-random_site_cb_data = "random_site_cb_data"
-start_make_collage = "start_make_collage"
-next_inline_kb = "next_inline_kb"
-start_choose_collage = "start_choose_collage"
-main_inline_kb = 'main_inline_kb'
-
-
-def build_info_kb() -> InlineKeyboardMarkup:
-    tg_channel_btn = InlineKeyboardButton(
-        text="Канал",
-        url='https://t.me/mnfcs'
-    )
-
-    btn_random_site = InlineKeyboardButton(
-        text="random site",
-        callback_data=random_site_cb_data,
-    )
-
-    row = [tg_channel_btn]
-    rows = [row,
-            [btn_random_site]]
-    markup_inline = InlineKeyboardMarkup(inline_keyboard=rows)
-
-    return markup_inline
-
 
 def main_inline_kb() -> InlineKeyboardMarkup:
     make_collage = InlineKeyboardButton(
         text="Сделать коллаж",
-        callback_data=start_choose_collage,
+        callback_data='start_make_collage',
     )
 
     example_collage = InlineKeyboardButton(
@@ -58,12 +33,34 @@ def ways_collages() -> InlineKeyboardMarkup:
     buider = InlineKeyboardBuilder()
 
     buider.button(text="Коллаж без интервалов",
-                  callback_data=start_make_collage)
+                  # callback_data=start_make_collage)
+                  callback_data='make_simple_collage')
 
     buider.button(text="Коллаж с интервалами",
-                  url='https://t.me/asdasdasdasd')
+                  callback_data='make_interval_collage')
 
     buider.button(text='Назад ⤴',
                   callback_data='back_main_inline_kb')
 
     return buider.adjust(1).as_markup()
+
+
+def input_intervals() -> InlineKeyboardMarkup:
+    buider = InlineKeyboardBuilder()
+    buider.button(text='Как написать интервалы?', callback_data='intervals_info')
+    buider.button(text='Назад ⤴', callback_data='cancel_intervals')
+    return buider.adjust(1).as_markup()
+
+
+def agreement_with_intervals() -> InlineKeyboardMarkup:
+    buider = InlineKeyboardBuilder()
+    buider.button(text='Да', callback_data='intervals_accepted')
+    buider.button(text='Нет', callback_data='reassign_intervals')
+    return buider.as_markup()
+
+
+def image_for_collage() -> InlineKeyboardMarkup:
+    buider = InlineKeyboardBuilder()
+    buider.button(text='Да', callback_data='image_accepted')
+    buider.button(text='Нет', callback_data='reassign_image')
+    return buider.as_markup()

@@ -1,16 +1,15 @@
 import os
-import re
 import tempfile
 
 from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from magic_filter import RegexpMode
-from re import Match
-
+from aiogram.types import FSInputFile
 import main_script
 from inline_keyboards import main_inline_kb, ways_collages, input_intervals, agreement_with_intervals, image_for_collage
-from routers.common_functions import bot
+from bot_script_webhook import bot
+
 from states import WaitUser
 from bot_exceptions import CollageException, VerticalIntervalException, HorizontalIntervalException
 
@@ -31,7 +30,7 @@ async def request_image(callback_query: types.CallbackQuery, state: FSMContext):
     await callback_query.message.edit_text("Пожалуйста, отправьте изображение.", reply_markup=markup)
 
 
-# Обработчик получения изображения
+# Обработчик получения изображения в состоянии ожидании изображения
 @router.message(F.photo, WaitUser.user_image)
 async def expected_image_received(message: types.Message, state: FSMContext):
     await state.update_data(user_mes=message)
@@ -50,6 +49,7 @@ async def image_received(message: types.Message, state: FSMContext):
                         reply_markup=image_for_collage())
 
 
+# Обработчик получения изображения после того, как пользователь прислал фото и ответил "да"
 @router.callback_query(F.data == "image_accepted")
 async def image_accepted(callback_query: types.CallbackQuery):
     await callback_query.message.edit_text(text="Выберите, как хотите сделать коллаж:",
@@ -104,7 +104,6 @@ async def make_collage(data: dict, vertical_interval=30, horizontal_interval=30)
         result_file_path = False
         await bot.download(photo, file_path)
 
-        from aiogram.types import FSInputFile
         """
         FSInputFile нужен для отправки файлов, которые хранятся на файловой системе, 
         а не в памяти. Это полезно, когда вам нужно отправить большие файлы, которые 
@@ -141,7 +140,6 @@ async def make_collage(data: dict, vertical_interval=30, horizontal_interval=30)
 
 
 # Обработчик нажатия на кнопку "Отмена" когда ждем изображение от пользователя
-# @router.callback_query(lambda c: c.data == 'cancel_image')
 @router.callback_query(lambda c: c.data == 'cancel_image', WaitUser.user_image)
 async def cancel_image(callback_query: types.CallbackQuery, state: FSMContext):
     await state.clear()  # Очистка состояния
@@ -157,7 +155,7 @@ async def cancel_intervals(callback_query: types.CallbackQuery, state: FSMContex
 
 # Обработчик для текста или других типов сообщений в состоянии ожидания изображения
 @router.message(~F.photo, WaitUser.user_image)
-async def not_image(message: types.Message, state: FSMContext):
+async def not_image(message: types.Message):
     buider = InlineKeyboardBuilder()
     # Предупреждаем пользователя вместе с кнопкой "Отмена"
     buider.button(text='Отмена', callback_data='cancel_image')
@@ -168,19 +166,24 @@ async def not_image(message: types.Message, state: FSMContext):
 # Обработчик сообщений в режиме ожидания интервалов (надо добавить проверку через regexp)
 @router.message(WaitUser.intervals, F.text.regexp(pattern, mode=RegexpMode.FINDALL).as_("found_intervals"))
 async def get_intervals(message: types.Message, state: FSMContext, found_intervals):
-    await state.update_data(intervals=found_intervals[0])
-    vertical_interval = int(found_intervals[0][0])
-    horizontal_interval = int(found_intervals[0][1])
-    print(vertical_interval, horizontal_interval)
-    await state.set_state(WaitUser.agree_intervals)
-    print(await state.get_state())
-    await message.reply(f'Интервалы по вертикали: {vertical_interval}\n'
-                        f'Интервалы по горизонтали:  {horizontal_interval}'
-                        f'\nОставляем так?', reply_markup=agreement_with_intervals())  # ДОБАВИТЬ КНОПКИ И ОБРАБОТЧИК
+    if int(found_intervals[0][0]) > 100 or int(found_intervals[0][1]) > 100:
+        await message.reply('🛑 Один из ваших интервалов больше 100 🛑\n'
+                            '      Пожалуйста введите интервалы заново')
+    else:
+        await state.update_data(intervals=found_intervals[0])
+        vertical_interval = int(found_intervals[0][0])
+        horizontal_interval = int(found_intervals[0][1])
+        print(vertical_interval, horizontal_interval)
+        await state.set_state(WaitUser.agree_intervals)
+        print(await state.get_state())
+        await message.reply(f'Интервалы по вертикали: {vertical_interval}\n'
+                            f'Интервалы по горизонтали:  {horizontal_interval}'
+                            f'\nОставляем так?',
+                            reply_markup=agreement_with_intervals())  # ДОБАВИТЬ КНОПКИ И ОБРАБОТЧИК
 
 
 @router.callback_query(F.data == 'intervals_accepted', WaitUser.agree_intervals)
-async def intervals_accepted(message: types.Message, state: FSMContext):
+async def intervals_accepted(state: FSMContext):
     await state.update_data(agree_intervals=True)
     data = await state.get_data()
     await state.clear()
@@ -196,7 +199,7 @@ async def reassign_intervals(callback_query: types.CallbackQuery):
 
 
 @router.message(WaitUser.intervals)
-async def not_intervals(message: types.Message, state: FSMContext):
+async def not_intervals(message: types.Message):
     await message.reply("Пожалуйста, отправьте интервалы, а не просто текст или какой-либо файл.",
                         reply_markup=input_intervals())
 
@@ -209,9 +212,8 @@ async def intervals_info(callback_query: types.CallbackQuery, state: FSMContext)
     # Предупреждаем пользователя вместе с кнопкой "Отмена"
     buider.button(text='Назад ⤴', callback_data='close_about_intervals')
     markup = buider.as_markup()
-    await callback_query.message.edit_text("– интервалы ≠ 0\n \n– интервалы - целые числа\n"
-                                           "\n – интервалы не могут быть cлишком большими\n"
-                                           " числами относительно размера вашего изображения\n"
+    await callback_query.message.edit_text("👉 интервалы ≠ 0\n \n👉 интервалы - целые числа\n"
+                                           "\n👉 интервалы не могут быть больше 100\n"
                                            "\nЖду ваших интервалов ↓", reply_markup=markup)
 
 

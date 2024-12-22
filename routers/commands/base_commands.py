@@ -13,7 +13,6 @@ channel_id = int(os.getenv('channel_id'))
 
 router = Router(name=__name__)
 load_dotenv(find_dotenv())
-bot = Bot(token=os.getenv('TOKEN'))
 
 
 # Проверка на бота
@@ -22,24 +21,26 @@ async def handle_bots(message: types.Message):
     return
 
 
-# Использована команда /start
+# обработчик команды /start
 @router.message(CommandStart())
 async def handle_start(message: types.Message):
     # если пользователь подписан
     print("НАЖАЛ СТАРТ")
-    if await check_sub(channel_id, message.from_user.id, message.chat.id):
+    if await check_sub(message):
         await message.answer(text=f"Привет, {message.from_user.full_name}!", reply_markup=main_inline_kb())
 
 
+# обработчик команды /help
 @router.message(Command("help", prefix="/"))
 async def handle_help(message: types.Message):
-    if await check_sub(channel_id, message.from_user.id, message.chat.id):
+    if await check_sub(message):
         await message.answer(text=f"Задайте вопрос ему: @oljick13")
 
 
+# обработчик инлайн кнопки "Я подписался"
 @router.callback_query(F.data == "next_inline_kb")
 async def handle_already_sub_edited(callback_query: CallbackQuery):
-    if await check_sub(channel_id, user_id=callback_query.from_user.id, chat_id=callback_query.message.chat.id):
+    if await check_sub(callback_query.message, user=callback_query.from_user.id):
         await callback_query.answer(
             text=(
                 "СПАСИБО 🤝"
@@ -52,12 +53,6 @@ async def handle_already_sub_edited(callback_query: CallbackQuery):
         )
 
 
-@router.callback_query(F.data == "start_choose_collage")
-async def choose_collage(callback_query: CallbackQuery):
-    await callback_query.message.edit_text(
-        text="Выберите, как хотите сделать коллаж:", reply_markup=ways_collages())
-
-
 # обработка инлайн кнопки "Назад к главному выбору"
 @router.callback_query(F.data == 'back_main_inline_kb')
 async def back_main_inline_kb(callback_query: CallbackQuery, state: FSMContext):
@@ -67,6 +62,7 @@ async def back_main_inline_kb(callback_query: CallbackQuery, state: FSMContext):
     )
 
 
+# обработка инлайн кнопки "Назад к главному выбору"
 @router.callback_query(F.data == 'close_about_intervals')
 async def close_about_intervals(callback_query: CallbackQuery):
     await callback_query.message.edit_text(

@@ -14,8 +14,7 @@ from bot_exceptions import VerticalIntervalException, CollageException, Horizont
 
 # функция открывает входное изображение для обработки
 def open_orig_pic(path_to_pic):
-    os.path.normpath(path_to_pic)
-    return Image.open(path_to_pic)
+    return Image.open(os.path.normpath(path_to_pic))
 
 # функция масштабирует изображение используя при этом фильтр Ланцоша, который улучшает(сглаживает) изображение
 # и уменьшает его разрешение для эконмии ресурсов

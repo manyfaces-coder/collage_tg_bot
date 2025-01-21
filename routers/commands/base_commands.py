@@ -1,12 +1,16 @@
 import os
-from aiogram import Router, types, F, Bot
+from aiogram import Router, types, F
 from aiogram.filters import CommandStart, Command
 from aiogram.types import CallbackQuery
 from dotenv import load_dotenv, find_dotenv
 
-from inline_keyboards import main_inline_kb, ways_collages, input_intervals
+from bot_script_webhook import tg_channels
+from inline_keyboards import main_inline_kb, input_intervals, channels_kb
 from routers.common_functions import check_sub
 from aiogram.fsm.context import FSMContext
+
+from utils.db import get_user_by_id, add_user, update_bot_open_status
+from utils.utils import is_user_subscribed
 
 load_dotenv(find_dotenv())
 channel_id = int(os.getenv('channel_id'))
@@ -21,26 +25,68 @@ async def handle_bots(message: types.Message):
     return
 
 
-# обработчик команды /start
 @router.message(CommandStart())
 async def handle_start(message: types.Message):
-    # если пользователь подписан
-    print("НАЖАЛ СТАРТ")
-    if await check_sub(message):
-        await message.answer(text=f"Привет, {message.from_user.full_name}!", reply_markup=main_inline_kb())
+    user_id = message.from_user.id
+    user_data = await get_user_by_id(user_id)
+
+    if user_data is None:
+        # Если пользователя нет в базе данных
+        await add_user(telegram_id=user_id, username=message.from_user.username,
+                       first_name=message.from_user.first_name)
+        bot_open = False
+
+    else:
+        # Получение статуса bot_open для пользователя
+        bot_open = user_data.get('bot_open', False)  # Второй параметр по умолчанию False
+
+    if bot_open:
+        # Если пользователь подписался на каналы
+        await message.answer(text=f"Давай сделаем коллаж", reply_markup=main_inline_kb())
+
+    else:
+        # Иначе показываем клавиатуру с каналами для подписки
+        # markup = subscribe_inline_keyboard(message.from_user.id)
+        await message.answer(
+            f'Привет, {message.from_user.full_name}!\n\n'
+            'Для работы с ботом необходимо подписаться на канал:',
+            reply_markup=channels_kb(tg_channels)
+
+        )
+
+
+@router.callback_query(F.data == 'check_subscription')
+async def check_subs_funk(callback_query: CallbackQuery):
+    for channel in tg_channels:
+        label = channel.get('label')
+        channel_url = channel.get('url')
+        user_id = callback_query.from_user.id
+        check = await is_user_subscribed(channel_url, user_id)
+        if check is False:
+            await callback_query.message.edit_text(f"❌ вы не подписались на канал 👉 {label}",
+                                                   reply_markup=channels_kb(tg_channels))
+            return False
+
+    await update_bot_open_status(telegram_id=callback_query.from_user.id, bot_open=True)
+
+    await callback_query.message.edit_text(
+        text=f"Давай сделаем коллаж", reply_markup=main_inline_kb()
+    )
+
+    await callback_query.answer(text=("СПАСИБО 🤝"), show_alert=True, cache_time=10)
 
 
 # обработчик команды /help
 @router.message(Command("help", prefix="/"))
 async def handle_help(message: types.Message):
-    if await check_sub(message):
-        await message.answer(text=f"Задайте вопрос ему: @oljick13")
+    await message.answer(text=f"Задайте вопрос ему: @oljick13")
 
 
 # обработчик инлайн кнопки "Я подписался"
 @router.callback_query(F.data == "next_inline_kb")
 async def handle_already_sub_edited(callback_query: CallbackQuery):
     if await check_sub(callback_query.message, user=callback_query.from_user.id):
+        await update_bot_open_status(telegram_id=callback_query.from_user.id, bot_open=True)
         await callback_query.answer(
             text=(
                 "СПАСИБО 🤝"

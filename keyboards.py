@@ -1,27 +1,39 @@
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
-from aiogram.utils.keyboard import ReplyKeyboardBuilder
+from bot_script_webhook import ADMIN_ID
 
 
-# class ButtonText:
-#     START = "Создать коллаж"
-#     HELP = "/help"
-#     EXAMPLE = "Показать пример"
+def main_contact_kb(user_id: int):
+    buttons = [
+        [
+            # KeyboardButton(
+            #     text="",
+            # )
+        ]
+    ]
+    # Предназначена для доступа к административной панели бота
+    if int(user_id) == int(ADMIN_ID):
+        buttons.append([
+            KeyboardButton(
+                text="⚙️ АДМИНКА",
+            )
+        ])
+
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=buttons,
+        resize_keyboard=True,
+        one_time_keyboard=False,
+        # input_field_placeholder="По кому получим ID?"
+    )
+
+    return keyboard
 
 
-# def get_on_start_kb():
-#     button_start = KeyboardButton(text=ButtonText.START)
-#     button_help = KeyboardButton(text=ButtonText.HELP)
-#     button_example = KeyboardButton(text=ButtonText.EXAMPLE)
-#     buttons_first_row = [button_start, button_help]
-#     buttons_second_row = [button_example]
-#     markup = ReplyKeyboardMarkup(
-#         keyboard=[buttons_first_row, buttons_second_row],
-#         resize_keyboard=True,
-#     )
-#     return markup
+# Для отмены рассылки
+def cancel_btn():
+    return ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="❌ Отмена")]],
+        resize_keyboard=True,
+        one_time_keyboard=False,
+        input_field_placeholder="Или нажмите на 'ОТМЕНА' для отмены",
+    )
 
-# def get_on_start_kb():
-#     builder = ReplyKeyboardBuilder()
-#     builder.row(KeyboardButton(text=ButtonText.START), KeyboardButton(text=ButtonText.HELP))
-#     builder.row(KeyboardButton(text=ButtonText.EXAMPLE))
-#     return builder.as_markup(resize_keyboard=True)

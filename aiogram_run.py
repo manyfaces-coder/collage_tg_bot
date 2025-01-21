@@ -1,15 +1,20 @@
 import logging
+import os
+
 from aiogram.types import BotCommand, BotCommandScopeDefault
 from aiohttp import web
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from bot_script_webhook import bot, dp, BASE_URL, WEBHOOK_PATH, HOST, PORT, ADMIN_ID
 from routers import router
+from utils.db import initialize_database
+import shutil
 
 
 # Функция для установки командного меню для бота
 async def set_commands():
     # Создаем список команд, которые будут доступны пользователям
-    commands = [BotCommand(command='start', description='Старт')]
+    commands = [BotCommand(command='start', description='Старт'),
+                BotCommand(command='help', description='Помощь')]
     # Устанавливаем эти команды как дефолтные для всех пользователей
     await bot.set_my_commands(commands, BotCommandScopeDefault())
 
@@ -18,8 +23,13 @@ async def set_commands():
 async def on_startup() -> None:
     # Устанавливаем командное меню
     await set_commands()
+
+    # Создаем базу данных и таблицу с пользователями, если таблицы не было
+    await initialize_database()
+
     # Устанавливаем вебхук для приема сообщений через заданный URL
     await bot.set_webhook(f"{BASE_URL}{WEBHOOK_PATH}")
+
     # Отправляем сообщение администратору о том, что бот был запущен
     await bot.send_message(chat_id=ADMIN_ID, text='Бот запущен!')
 
@@ -32,6 +42,9 @@ async def on_shutdown() -> None:
     await bot.delete_webhook(drop_pending_updates=True)
     # Закрываем сессию бота, освобождая ресурсы
     await bot.session.close()
+    # Очищаем папку с готовыми изображениями
+    shutil.rmtree('final', ignore_errors=True)
+    os.makedirs('final', exist_ok=True)
 
 
 # Основная функция, которая запускает приложение

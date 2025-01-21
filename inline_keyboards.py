@@ -64,3 +64,31 @@ def image_for_collage() -> InlineKeyboardMarkup:
     buider.button(text='Да', callback_data='image_accepted')
     buider.button(text='Нет', callback_data='reassign_image')
     return buider.as_markup()
+
+
+def channels_kb(kb_list: list):
+    inline_keyboard = []
+
+    print(type(kb_list))
+    for channel_data in kb_list:
+        print(channel_data)
+        label = channel_data.get('label')
+        url = channel_data.get('url')
+
+        # Проверка на наличие необходимых ключей
+        if label and url:
+            kb = [InlineKeyboardButton(text=label, url=url)]
+            inline_keyboard.append(kb)
+
+    # Добавление кнопки "Проверить подписку"
+    inline_keyboard.append([InlineKeyboardButton(text="Проверить подписку", callback_data="check_subscription")])
+
+    return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
+
+
+def admin_kb():
+    buider = InlineKeyboardBuilder()
+    buider.button(text="👥 Пользователи", callback_data="admin_users")
+    buider.button(text="📧 Рассылка", callback_data="admin_broadcast")
+
+    return buider.as_markup()

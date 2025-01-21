@@ -10,3 +10,6 @@ venv
 virtualenv
 admin_functions.py
 keyboards.py
+bot.db
+s.py
+original_image

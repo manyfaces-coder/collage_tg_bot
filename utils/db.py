@@ -1,81 +1,80 @@
-import aiosqlite
+import asyncpg
+import os
+
+DB_HOST = os.getenv("POSTGRES_HOST", "localhost")
+DB_PORT = os.getenv("POSTGRES_PORT", "5432")
+DB_NAME = os.getenv("POSTGRES_DB", "bot_db")
+DB_USER = os.getenv("POSTGRES_USER", "bot_user")
+DB_PASSWORD = os.getenv("POSTGRES_PASSWORD", "bot_password")
+
+async def get_db_pool():
+    """Создает пул соединений с PostgreSQL"""
+    return await asyncpg.create_pool(
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+        host=DB_HOST,
+        port=DB_PORT
+    )
 
 
-async def initialize_database():
-    # Подключаемся к базе данных (если база данных не существует, она будет создана)
-    async with aiosqlite.connect("bot.db") as db:
-        # Создаем таблицу users, если она не существует
-        await db.execute("""
+async def initialize_database(pool):
+    """Создает таблицы, если их нет"""
+    async with pool.acquire() as conn:
+        await conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS users (
-                telegram_id INTEGER PRIMARY KEY,
+                telegram_id BIGINT PRIMARY KEY,
                 username TEXT,
                 first_name TEXT,
-                bot_open BOOLEAN DEFAULT FALSE 
-            )
-        """)
-        # bot_open доступен ли бот для пользователя
-        # Сохраняем изменения
-        await db.commit()
+                bot_open BOOLEAN DEFAULT FALSE
+                )
+            """)
 
 
-# добавление пользователя в базу данных
-async def add_user(telegram_id: int, username: str, first_name: str):
-    async with aiosqlite.connect("bot.db") as db:
-        await db.execute("""
-        INSERT INTO users (telegram_id, username, first_name)
-        VALUES (?, ?, ?)
-        ON CONFLICT(telegram_id) DO NOTHING
-        """, (telegram_id, username, first_name))
-        await db.commit()
+async def add_user(pool, telegram_id:int, username: str, first_name: str):
+    """Добавление польщователя в БД"""
+    async with pool.acquire() as conn:
+        await conn.execute(
+            """
+            INSERT INTO users (telegram_id, username, first_name)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (telegram_id) DO NOTHING
+            """, telegram_id, username, first_name
+        )
 
 
-# получениe всех пользователей с базы данных
-async def get_all_users():
-    async with aiosqlite.connect("bot.db") as db:
-        cursor = await db.execute("SELECT * FROM users")
-        rows = await cursor.fetchall()
-
-        # Преобразование результата в список словарей
+async def get_all_users(pool):
+    """Получает всех пользователей из базы данных"""
+    async with pool.acquire() as conn:
+        rows = await conn.fetch("SELECT * FROM users")
         users = [
             {
-                'telegram_id': row[0],
-                'username': row[1],
-                'first_name': row[2],
-                'bot_open': row[3]
+                'telegram_id': row['telegram_id'],
+                'username': row['username'],
+                'first_name': row['first_name'],
+                'bot_open': row['bot_open']
             }
             for row in rows
         ]
         return users
 
 
-# получениe одного пользователя по его ID
-# функция возвращает или None, если пользователя нет или словарь с данными по
-# пользователю, если он есть в базе данных.
-async def get_user_by_id(telegram_id: int):
-    async with aiosqlite.connect("bot.db") as db:
-        cursor = await db.execute("SELECT * FROM users WHERE telegram_id = ?", (telegram_id,))
-        row = await cursor.fetchone()
 
-        if row is None:
-            return None
-
-        # Преобразование результата в словарь
-        user = {
-            "telegram_id": row[0],
-            "username": row[1],
-            "first_name": row[2],
-            "bot_open": row[3]
-        }
-        return user
+async def get_user_by_id(pool, telegram_id: int):
+    """Возвращает пользователя по ID"""
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow("SELECT * FROM users WHERE telegram_id = $1", telegram_id)
+        return dict(row) if row else None
 
 
-# функция для изменения статуса bot_open
-async def update_bot_open_status(telegram_id: int, bot_open: bool):
-    print(f"UPDATE_BOT_OPEN_STATUS – {bot_open}")
-    async with aiosqlite.connect("bot.db") as db:
-        await db.execute("""
+async def update_bot_open_status(pool, telegram_id: int, bot_open: bool):
+    async with pool.acquire() as conn:
+        await conn.execute(
+            """
             UPDATE users
-            SET bot_open = ?
-            WHERE telegram_id = ?
-        """, (bot_open, telegram_id))
-        await db.commit()
+            SET bot_open = $1
+            WHERE telegram_id = $2
+            """, bot_open, telegram_id
+        )
+

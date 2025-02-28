@@ -6,9 +6,12 @@ from aiohttp import web
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from bot_script_webhook import bot, dp, BASE_URL, WEBHOOK_PATH, HOST, PORT, ADMIN_ID
 from routers import router
-from utils.db import initialize_database
+from utils.db import initialize_database, get_db_pool
 import shutil
+import socket
+import asyncio
 
+SERVERS = (os.getenv("SERVERS").replace(" ", "")).split(',')
 
 # Функция для установки командного меню для бота
 async def set_commands():
@@ -21,11 +24,13 @@ async def set_commands():
 
 # Функция, которая будет вызвана при запуске бота
 async def on_startup() -> None:
+    global pool  # Делаем pool глобальным, чтобы использовать его в других функциях
     # Устанавливаем командное меню
     await set_commands()
 
     # Создаем базу данных и таблицу с пользователями, если таблицы не было
-    await initialize_database()
+    pool = await get_db_pool()  # Создаем пул соединений
+    await initialize_database(pool)  # Передаем pool в initialize_database()
 
     # Устанавливаем вебхук для приема сообщений через заданный URL
     await bot.set_webhook(f"{BASE_URL}{WEBHOOK_PATH}")
@@ -34,12 +39,36 @@ async def on_startup() -> None:
     await bot.send_message(chat_id=ADMIN_ID, text='Бот запущен!')
 
 
+async def is_any_server_alive():
+    """ Проверяем, доступны ли другие серверы в сети. """
+    for server in SERVERS:
+        try:
+            reader, writer = await asyncio.open_connection(server, 8080)
+            writer.close()
+            await writer.wait_closed()
+            print(f"✅ Сервер {server} доступен")
+            return True
+        except Exception:
+            print(f"❌ Сервер {server} недоступен.")
+
+    await bot.send_message(chat_id=ADMIN_ID, text='⚠️ Ни один сервер не отвечает. Вебхуки удалены.')
+    return False
+
+
 # Функция, которая будет вызвана при остановке бота
 async def on_shutdown() -> None:
+
     # Отправляем сообщение администратору о том, что бот был остановлен
-    await bot.send_message(chat_id=ADMIN_ID, text='Бот остановлен!')
+    # await bot.send_message(chat_id=ADMIN_ID, text='Бот остановлен!')
     # Удаляем вебхук и, при необходимости, очищаем ожидающие обновления
-    await bot.delete_webhook(drop_pending_updates=True)
+    # await bot.delete_webhook(drop_pending_updates=True)
+    if await is_any_server_alive():
+        print("🔄 Есть работающие серверы, не удаляем вебхук.")
+    else:
+        print("🛑 Все серверы выключены, удаляем вебхук!")
+        await bot.delete_webhook(drop_pending_updates=True)
+    # await db_backup()
+    await bot.send_message(chat_id=ADMIN_ID, text=f'Бот {socket.gethostname()} остановлен!')
     # Закрываем сессию бота, освобождая ресурсы
     await bot.session.close()
     # Очищаем папку с готовыми изображениями

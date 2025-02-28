@@ -1,3 +1,6 @@
+import time
+import logging
+
 import PIL
 from PIL import Image
 import os.path
@@ -13,8 +16,9 @@ def open_orig_pic(path_to_pic):
 # функция масштабирует изображение используя при этом фильтр Ланцоша, который улучшает(сглаживает) изображение
 # и уменьшает его разрешение для эконмии ресурсов
 def scale_image(image):
-    h, v = image.size
-    return image.resize((int(h / 1.25), int(v / 1.25)), Image.LANCZOS)
+    w, h = image.size
+    logging.info(f'Размер изображения: ширина = {w}, высота = {h}')
+    return image.resize((int(w / 1.25), int(h / 1.25)), Image.LANCZOS)
 
 
 # функция создает еще 3 отзеркаленных в разных плоскостях изображения и создает из них коллаж
@@ -40,13 +44,9 @@ def create_mirror_collage(image_1):
 
 def cutting_vertically(image, interval=32):
     w, h = image.size
-    print(w)
-    print(h)
     try:
         step_horizontal = range(0, w - w % interval, int(w / interval))
     except:
-        print("The interval is impossible")
-        # print(exp)
         raise VerticalIntervalException
     list_columns = []
     for i in step_horizontal:
@@ -74,9 +74,7 @@ def cutting_horizontal(image, interval=32):
     w, h = image.size
     try:
         step_vertical = range(0, h - h % interval, int(h / interval))
-        print(f'step_vertical - {step_vertical}')
     except:
-        print("The interval is impossible")
         raise HorizontalIntervalException
     list_rows = []
     for i in step_vertical:
@@ -100,7 +98,7 @@ def sew_rows(list_rows, w, h, interval):
     return new_collage
 
 
-def start(vertical_interval=30, horizontal_interval=30, file_path='original_image/1.jpg'):
+def start(vertical_interval=30, horizontal_interval=30, file_path='original_image/original_image.jpeg'):
     scaled_image = scale_image(open_orig_pic(file_path))
     mirror_collage = create_mirror_collage(scaled_image)
     columns_list, w, h = cutting_vertically(mirror_collage, interval=vertical_interval)
@@ -112,9 +110,11 @@ def start(vertical_interval=30, horizontal_interval=30, file_path='original_imag
     return f"final/final_collage{random_num}.png"
 
 
-def start_for_bot(vertical_interval=30, horizontal_interval=30, file_path='original_image/1.jpg'):
-    print(f"PRILETELI с интервалами: {vertical_interval}, {horizontal_interval}")
+def start_for_bot(vertical_interval=30, horizontal_interval=30, file_path='original_image/original_image.jpeg'):
+    # print(f"Начинается создание коллажа с интервалами: {vertical_interval}, {horizontal_interval}")
+    logging.info(f'Начинается обработка изображения с интервалами {vertical_interval} и {horizontal_interval}')
     try:
+        start_time = time.time()
         scaled_image = scale_image(open_orig_pic(file_path))
         mirror_collage = create_mirror_collage(scaled_image)
         # mirror_collage = create_mirror_collage(open_orig_pic(file_path))
@@ -125,6 +125,7 @@ def start_for_bot(vertical_interval=30, horizontal_interval=30, file_path='origi
         random_num = random.randint(100, 9999)
         # final_collage.save("final/final_collage.png", "PNG", optimize=True)
         final_collage.save(f"final/final_collage{random_num}.png", "PNG", optimize=True)
+        print(f"Время обработки изображения: {time.time() - start_time:.2f} секунд")
         return f"final/final_collage{random_num}.png"
     except VerticalIntervalException:
         raise VerticalIntervalException
@@ -140,4 +141,6 @@ def start_for_bot(vertical_interval=30, horizontal_interval=30, file_path='origi
 
 if __name__ == "__main__":
     print("start")
+    start_time = time.time()
     start(vertical_interval=30, horizontal_interval=30)
+    print(f"Время обработки изображения: {time.time() - start_time:.2f} секунд")

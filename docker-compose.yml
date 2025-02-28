@@ -1,0 +1,74 @@
+services:
+  redis:
+    image: redis:latest
+    container_name: redis_server
+    ports:
+      - "6379:6379"  # Открываем порт Redis
+    volumes:
+      - redis_data:/data  # Хранение данных Redis
+
+  bot:
+    build:
+      context: .
+    ports:
+      - "8080:8080"
+    container_name: bot_server
+    depends_on:
+      - redis
+      - postgres
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx_server
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx_setup/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - bot
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres_server
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: bot_db
+      POSTGRES_USER: bot_user
+      POSTGRES_PASSWORD: bot_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # Хранение БД
+      - ./backups:/backups  # Хранение резервных копий
+
+
+
+
+  postgres_backup:
+    image: postgres:latest
+    container_name: backup_service
+    depends_on:
+      - postgres
+    volumes:
+      - ./backups:/backups
+    environment:
+      - PGPASSWORD=${POSTGRES_PASSWORD}
+    command: >
+      sh -c '
+        while true; do
+          echo "📂 Создание планового бэкапа...";
+          pg_dump -h postgres -U ${POSTGRES_USER} ${POSTGRES_DB} > /backups/backup_$(date +%F_%H-%M-%S).sql;
+          echo "✅ Бэкап создан.";
+          sleep 1800;
+          echo "🧹 Удаление старых бэкапов...";
+          find /backups -type f -mmin +144 -exec rm {} \;
+          echo "✅ Старые бэкапы удалены.";
+        done'
+    restart: always
+
+volumes:
+  redis_data:
+  postgres_data:

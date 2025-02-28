@@ -1,39 +1,18 @@
 import os
 from aiogram import Router, types, F
+from aiogram.fsm.context import FSMContext
+from aiogram.types import CallbackQuery
 from dotenv import load_dotenv, find_dotenv
-from aiogram.enums import ChatMemberStatus
 
-from inline_keyboards import subscribe_inline_keyboard, main_inline_kb
-from bot_script_webhook import bot
+# from bot_script_webhook import check_flood
+from bot_script_webhook import custom_redis
+from inline_keyboards import main_inline_kb, input_intervals
 from keyboards import main_contact_kb
-from utils.db import update_bot_open_status
+from routers.commands.base_commands import check_sub
 
 load_dotenv(find_dotenv())
 router = Router()
 channel_id = int(os.getenv('channel_id'))
-
-
-# Проверка подписки только на мой канал, проверка постоянная и используется для оснвных функций бота
-async def check_sub(message, user=None):
-    try:
-        if user is None:
-            user = message.from_user.id
-        # Проверяем, подписан ли пользователь на канал
-        member = await bot.get_chat_member(chat_id=channel_id, user_id=user)
-        if member.status in [ChatMemberStatus.MEMBER, ChatMemberStatus.CREATOR, ChatMemberStatus.ADMINISTRATOR]:
-            return True
-        else:
-            markup = subscribe_inline_keyboard(message.from_user.id)
-            await bot.send_message(chat_id=message.chat.id, text="Для доступа к Боту подпишитесь на канал "
-                                   , reply_markup=markup)
-            await update_bot_open_status(telegram_id=message.chat.id, bot_open=False)
-            return False
-
-    except Exception as exp:
-        print(f"Ошибка при проверке подписки: {exp}")
-        await bot.send_message(chat_id=message.chat.id,
-                               text="По какой-то причине не удалось проверить подписку на канал")
-        return False
 
 
 # обработчик голосовых сообщений
@@ -51,6 +30,31 @@ async def handle_admin_cancel_button(message: types.Message):
 # обработчик любых сообщений кроме изображений
 @router.message(~F.photo)
 async def handle_unknown_message(message: types.Message):
+    # if check_flood.is_flood(user_id=str(message.from_user.id), interval=5):
+    if await custom_redis.is_flood(user_id=str(message.from_user.id), interval=1):
+        await message.answer(text='Вы слишком часто отправляете сообщения. Подождите немного!')
+        return
     if await check_sub(message):
         markup = main_inline_kb()
         await message.answer(text='Я не понимаю, что вы хотите, пожалуйста выберите действие', reply_markup=markup)
+
+
+@router.callback_query(F.data == 'back_main_inline_kb')
+async def back_main_inline_kb(callback_query: CallbackQuery, state: FSMContext):
+    """Обработка инлайн кнопки "Назад к главному выбору"""
+    await state.clear()
+    await custom_redis.delete_data(f"user_image:{callback_query.from_user.id}")  # Удаляем фото
+    # await custom_redis.delete_data(f"user_state:{message.from_user.id}")  # Удаляем состояние
+    await custom_redis.delete_data(f"user_state:{callback_query.from_user.id}")  # Удаляем состояние
+    await callback_query.message.edit_text(
+        text='Выберите действие', reply_markup=main_inline_kb()
+    )
+
+
+@router.callback_query(F.data == 'close_about_intervals')
+async def close_about_intervals(callback_query: CallbackQuery):
+    """Обработка инлайн кнопки "Назад к вводу интервалов"""
+    await callback_query.message.edit_text(
+        text='Введите два обычных целых числа через пробел или любой другой символ',
+        reply_markup=input_intervals()
+    )

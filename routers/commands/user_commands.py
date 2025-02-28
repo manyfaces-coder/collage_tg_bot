@@ -5,7 +5,7 @@ from aiogram.types import KeyboardButton, KeyboardButtonRequestUser, KeyboardBut
 from dotenv import load_dotenv, find_dotenv
 
 from bot_script_webhook import ADMIN_ID
-from routers.common_functions import check_sub
+from routers.commands.base_commands import check_sub
 
 router = Router(name=__name__)
 

@@ -31,7 +31,8 @@ async def handle_admin_cancel_button(message: types.Message):
 @router.message(~F.photo)
 async def handle_unknown_message(message: types.Message):
     # if check_flood.is_flood(user_id=str(message.from_user.id), interval=5):
-    if await custom_redis.is_flood(user_id=str(message.from_user.id), interval=1):
+    # if await custom_redis.is_flood(user_id=str(message.from_user.id), interval=1):
+    if await custom_redis.is_flood(user_id=str(message.from_user.id)):
         await message.answer(text='Вы слишком часто отправляете сообщения. Подождите немного!')
         return
     if await check_sub(message):

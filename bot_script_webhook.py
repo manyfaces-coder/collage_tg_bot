@@ -19,20 +19,14 @@ PORT = int(os.getenv("PORT"))
 WEBHOOK_PATH = '/'
 BASE_URL = os.getenv("BASE_URL")
 tg_channels = [{'label': 'Канал', 'url': f'{os.getenv("main_chanel")}'}]
-# check_flood = AntiFlood(redis_host='localhost', redis_port=6379)
-# check_flood = AntiFlood(redis_host=os.getenv("REDIS_HOST", "localhost"), redis_port=int(os.getenv("REDIS_PORT", 6379)))
+REDIS_URL = os.getenv("REDIS_URL") or f"redis://{os.getenv('REDIS_HOST','localhost')}:{int(os.getenv('REDIS_PORT',6379))}/0"
 
-# redis_storage = RedisStorage(redis_host=os.getenv("REDIS_HOST", "localhost"), redis_port=int(os.getenv("REDIS_PORT", 6379)))
-
-redis_client = redis.Redis(host=os.getenv("REDIS_HOST", "localhost"), port=int(os.getenv("REDIS_PORT", 6379)))
+redis_client = redis.from_url(REDIS_URL, decode_responses=True)
 # Используем `AiogramRedisStorage` для FSM
 redis_storage =AiogramRedisStorage(redis_client)
 
 # Используем наш `RedisStorage` для произвольных данных (антифлуд, изображения и т. д.)
-custom_redis = RedisStorage(
-    redis_host=os.getenv("REDIS_HOST", "localhost"),
-    redis_port=int(os.getenv("REDIS_PORT", 6379))
-)
+custom_redis = RedisStorage(redis_url=REDIS_URL, key_prefix="bot")  # твой класс
 
 # инициализируем бота и диспетчера для работы с ним
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))

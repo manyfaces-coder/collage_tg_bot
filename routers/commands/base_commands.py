@@ -35,7 +35,8 @@ async def handle_start(message: types.Message):
     user_data = await get_user_by_id(pool, user_id)
 
     # if check_flood.is_flood(user_id=str(message.from_user.id), interval=5):
-    if await custom_redis.is_flood(user_id=str(message.from_user.id), interval=1):
+    # if await custom_redis.is_flood(user_id=str(message.from_user.id), interval=1):
+    if await custom_redis.is_flood(user_id=str(message.from_user.id)):
         await message.answer(text='Вы слишком часто отправляете сообщения. Подождите немного!')
         return
 

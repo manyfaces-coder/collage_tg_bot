@@ -32,9 +32,9 @@ services:
       - bot
 
   postgres:
-    image: postgres:latest
+    image: postgres:17
     container_name: postgres_server
-    restart: always
+    restart: unless-stopped
     ports:
       - "5432:5432"
     environment:
@@ -46,7 +46,7 @@ services:
       - ./backups:/backups  # Хранение резервных копий
 
   postgres_backup:
-    image: postgres:latest
+    image: postgres:17
     container_name: backup_service
     depends_on:
       - postgres
@@ -65,7 +65,7 @@ services:
           find /backups -type f -mtime +2 -exec rm {} \;
           echo "✅ Старые бэкапы удалены.";
         done'
-    restart: always
+    restart: unless-stopped
 
 volumes:
   redis_data:

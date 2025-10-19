@@ -27,6 +27,7 @@ services:
       - "80:80"
     volumes:
       - ./nginx_setup/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx_setup/servers.conf:/etc/nginx/servers.conf:ro
     depends_on:
       - bot
 
@@ -44,9 +45,6 @@ services:
       - postgres_data:/var/lib/postgresql/data  # Хранение БД
       - ./backups:/backups  # Хранение резервных копий
 
-
-
-
   postgres_backup:
     image: postgres:latest
     container_name: backup_service
@@ -62,9 +60,9 @@ services:
           echo "📂 Создание планового бэкапа...";
           pg_dump -h postgres -U ${POSTGRES_USER} ${POSTGRES_DB} > /backups/backup_$(date +%F_%H-%M-%S).sql;
           echo "✅ Бэкап создан.";
-          sleep 1800;
+          sleep 3600; 
           echo "🧹 Удаление старых бэкапов...";
-          find /backups -type f -mmin +144 -exec rm {} \;
+          find /backups -type f -mtime +2 -exec rm {} \;
           echo "✅ Старые бэкапы удалены.";
         done'
     restart: always

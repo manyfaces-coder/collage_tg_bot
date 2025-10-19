@@ -18,7 +18,7 @@ PORT = int(os.getenv("PORT"))
 # WEBHOOK_PATH = f'/{BOT_TOKEN}'
 WEBHOOK_PATH = '/'
 BASE_URL = os.getenv("BASE_URL")
-tg_channels = [{'label': 'Мануфацус', 'url': 'https://t.me/mnfcs'}]
+tg_channels = [{'label': 'Канал', 'url': f'{os.getenv("main_chanel")}'}]
 # check_flood = AntiFlood(redis_host='localhost', redis_port=6379)
 # check_flood = AntiFlood(redis_host=os.getenv("REDIS_HOST", "localhost"), redis_port=int(os.getenv("REDIS_PORT", 6379)))
 

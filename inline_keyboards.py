@@ -1,6 +1,6 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-
+import os
 
 def main_inline_kb() -> InlineKeyboardMarkup:
     make_collage = InlineKeyboardButton(
@@ -10,7 +10,7 @@ def main_inline_kb() -> InlineKeyboardMarkup:
 
     example_collage = InlineKeyboardButton(
         text="Как это работает?",
-        url="https://t.me/mnfcs/199"
+        url=os.getenv('post_url')
     )
     rows = [[make_collage, example_collage]]
 
@@ -22,7 +22,7 @@ def main_inline_kb() -> InlineKeyboardMarkup:
 def subscribe_inline_keyboard(user_id) -> InlineKeyboardMarkup:
     buider = InlineKeyboardBuilder()
     buider.button(text="Телеграм канал",
-                  url='https://t.me/mnfcs')
+                  url=os.getenv('post_url'))
     buider.button(text="Я подписался",
                   callback_data='next_inline_kb', user_id=user_id)
 

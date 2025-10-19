@@ -123,7 +123,7 @@ async def check_sub(message, user=None):
 async def is_user_subscribed(channel_url: str, telegram_id: int) -> bool:
     """Проверка подписки на список каналов"""
     try:
-        # Получаем username канала из URL, пример (https://t.me/mnfcs)
+        # Получаем username канала из URL, пример (https://t.me/test)
         channel_username = channel_url.split('/')[-1]
 
         # Получаем информацию о пользователе в канале

@@ -1,12 +1,12 @@
 import os
 from aiogram import Router, types, F
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, InputMediaPhoto, InputMediaVideo
 from dotenv import load_dotenv, find_dotenv
 
-# from bot_script_webhook import check_flood
+from instruction import HOW_IT_WORKS_TEXT, EXAMPLE_VIDEO_ID, BEFORE_IMAGE_ID, AFTER_IMAGE_ID
 from bot_script_webhook import custom_redis
-from inline_keyboards import main_inline_kb, input_intervals
+from inline_keyboards import main_inline_kb, input_intervals, admin_kb
 from keyboards import main_contact_kb
 from routers.commands.base_commands import check_sub
 
@@ -59,3 +59,19 @@ async def close_about_intervals(callback_query: CallbackQuery):
         text='Введите два обычных целых числа через пробел или любой другой символ',
         reply_markup=input_intervals()
     )
+
+@router.callback_query(F.data == "example_collage")
+async def show_example(callback_query: types.CallbackQuery):
+    await callback_query.answer()
+
+    media = [
+        InputMediaVideo(
+            media=EXAMPLE_VIDEO_ID,
+            caption=HOW_IT_WORKS_TEXT,
+            parse_mode="HTML",
+        ),
+        InputMediaPhoto(media=BEFORE_IMAGE_ID),
+        InputMediaPhoto(media=AFTER_IMAGE_ID),
+    ]
+
+    await callback_query.message.answer_media_group(media)

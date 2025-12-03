@@ -16,3 +16,4 @@ bot.db
 backups/*
 servers.conf
 backup.sql
+pgdata

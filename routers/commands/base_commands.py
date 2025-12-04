@@ -2,9 +2,10 @@ import os
 from aiogram import Router, types, F
 from aiogram.enums import ChatMemberStatus
 from aiogram.filters import CommandStart, Command
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, InputMediaPhoto, InputMediaVideo
 from dotenv import load_dotenv, find_dotenv
-# from bot_script_webhook import check_flood
+from instruction import HOW_IT_WORKS_TEXT, EXAMPLE_VIDEO_ID, BEFORE_IMAGE_ID, AFTER_IMAGE_ID
+
 from bot_script_webhook import custom_redis
 from bot_script_webhook import tg_channels, bot
 from inline_keyboards import main_inline_kb, channels_kb, subscribe_inline_keyboard
@@ -17,6 +18,13 @@ channel_id = int(os.getenv('channel_id'))
 router = Router(name=__name__)
 load_dotenv(find_dotenv())
 
+# команда для получения id файлов, для их повторного использования
+# @router.message(F.photo | F.video)
+# async def debug_media_ids(message: types.Message):
+#     if message.video:
+#         await message.answer(f"video_id: {message.video.file_id}")
+#     if message.photo:
+#         await message.answer(f"photo_id: {message.photo[-1].file_id}")
 
 # Проверка на бота
 @router.message(F.from_user.is_bot == True)
@@ -34,7 +42,6 @@ async def handle_start(message: types.Message):
     # Получаем данные пользователя
     user_data = await get_user_by_id(pool, user_id)
 
-    # if check_flood.is_flood(user_id=str(message.from_user.id), interval=5):
     # if await custom_redis.is_flood(user_id=str(message.from_user.id), interval=1):
     if await custom_redis.is_flood(user_id=str(message.from_user.id)):
         await message.answer(text='Вы слишком часто отправляете сообщения. Подождите немного!')
@@ -69,6 +76,20 @@ async def handle_start(message: types.Message):
 @router.message(Command("help", prefix="/"))
 async def handle_help(message: types.Message):
     await message.answer(text=f"Задайте вопрос ему: @oljick13")
+
+# Прислать инструкцию по боту
+@router.message(Command("example_collage", prefix="/"))
+async def show_example_cmd(message: types.Message):
+    media = [
+        InputMediaVideo(
+            media=EXAMPLE_VIDEO_ID,
+            caption=HOW_IT_WORKS_TEXT,
+            parse_mode="HTML",
+        ),
+        InputMediaPhoto(media=BEFORE_IMAGE_ID),
+        InputMediaPhoto(media=AFTER_IMAGE_ID),
+    ]
+    await message.answer_media_group(media)
 
 
 @router.callback_query(F.data == 'check_subscription')

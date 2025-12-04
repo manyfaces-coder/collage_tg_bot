@@ -10,7 +10,7 @@ def main_inline_kb() -> InlineKeyboardMarkup:
 
     example_collage = InlineKeyboardButton(
         text="Как это работает?",
-        url=os.getenv('post_url')
+        callback_data='example_collage'
     )
     rows = [[make_collage, example_collage]]
 
@@ -32,11 +32,11 @@ def subscribe_inline_keyboard(user_id) -> InlineKeyboardMarkup:
 def ways_collages() -> InlineKeyboardMarkup:
     buider = InlineKeyboardBuilder()
 
-    buider.button(text="Коллаж без интервалов",
+    buider.button(text="Коллаж по умолчанию",
                   # callback_data=start_make_collage)
                   callback_data='make_simple_collage')
 
-    buider.button(text="Коллаж с интервалами",
+    buider.button(text="Задать интервалы",
                   callback_data='make_interval_collage')
 
     buider.button(text='Назад ⤴',
@@ -92,3 +92,18 @@ def admin_kb():
     buider.button(text="📧 Рассылка", callback_data="admin_broadcast")
 
     return buider.as_markup()
+
+def cancel_btn():
+    buider = InlineKeyboardBuilder()
+    buider.button(text="❌ Отмена", callback_data="cancel")
+
+    return buider.as_markup()
+
+
+# def cancel_btn():
+#     return ReplyKeyboardMarkup(
+#         keyboard=[[KeyboardButton(text="❌ Отмена")]],
+#         resize_keyboard=True,
+#         one_time_keyboard=False,
+#         input_field_placeholder="Или нажмите на 'ОТМЕНА' для отмены",
+#     )

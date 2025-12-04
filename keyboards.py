@@ -1,20 +1,19 @@
+import os
+
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 from bot_script_webhook import ADMIN_ID
+from dotenv import load_dotenv, find_dotenv
 
+load_dotenv(find_dotenv())
+admin_command = os.getenv('admin_command')
 
 def main_contact_kb(user_id: int):
-    buttons = [
-        [
-            # KeyboardButton(
-            #     text="",
-            # )
-        ]
-    ]
+    buttons = []
     # Предназначена для доступа к административной панели бота
     if int(user_id) == int(ADMIN_ID):
         buttons.append([
             KeyboardButton(
-                text="⚙️ АДМИНКА",
+                text=admin_command,
             )
         ])
 
@@ -22,18 +21,7 @@ def main_contact_kb(user_id: int):
         keyboard=buttons,
         resize_keyboard=True,
         one_time_keyboard=False,
-        # input_field_placeholder="По кому получим ID?"
     )
-
     return keyboard
 
-
-# Для отмены рассылки
-def cancel_btn():
-    return ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text="❌ Отмена")]],
-        resize_keyboard=True,
-        one_time_keyboard=False,
-        input_field_placeholder="Или нажмите на 'ОТМЕНА' для отмены",
-    )
 

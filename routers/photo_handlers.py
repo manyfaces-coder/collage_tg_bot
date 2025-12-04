@@ -36,16 +36,6 @@ async def request_image(callback_query: types.CallbackQuery, state: FSMContext):
         await callback_query.message.edit_text("Пожалуйста, отправьте изображение.", reply_markup=markup)
 
 
-# @router.message(F.photo, WaitUser.user_image)
-# async def expected_image_received(message: types.Message, state: FSMContext):
-#     """Обработчик получения изображения в состоянии ожидании изображения"""
-#     await state.update_data(user_mes=message)
-#     await state.update_data(user_image=message.photo)
-#     await custom_redis.set_data(f"user_state:{message.from_user.id}", {"step": "got_image"})
-#     await state.set_state(WaitUser.use_intervals)
-#     await message.reply(
-#         text="Выберите, как хотите сделать коллаж:", reply_markup=ways_collages())
-
 
 @router.message(F.photo, WaitUser.user_image)
 async def expected_image_received(message: types.Message, state: FSMContext):
@@ -61,15 +51,7 @@ async def expected_image_received(message: types.Message, state: FSMContext):
     await message.reply("Выберите, как хотите сделать коллаж:", reply_markup=ways_collages())
 
 
-# @router.message(F.photo)
-# async def image_received(message: types.Message, state: FSMContext):
-#     if await check_sub(message):
-#         message_dict = message.model_dump()  # Преобразуем в JSON-совместимый формат
-#         await state.update_data(user_mes=message_dict)
-#         await state.update_data(user_image=message.photo)
-#         await custom_redis.set_data(f"user_state:{message.from_user.id}", {"step": "got_image"})
-#         await message.reply(text='Вы хотите сделать коллаж из этого изображения?',
-#                             reply_markup=image_for_collage())
+
 @router.message(F.photo)
 async def image_received(message: types.Message, state: FSMContext):
     if await check_sub(message):
@@ -113,7 +95,7 @@ async def interval_solution(callback_query: types.CallbackQuery, state: FSMConte
             text='Введите два обычных целых числа через пробел или любой другой символ',
             reply_markup=input_intervals())
     else:
-        await callback_query.message.edit_text("Выбран обычный коллаж")
+        await callback_query.message.edit_text("Выбран коллаж по умолчанию")
         await state.update_data(use_intervals=False)
         data = await state.get_data()
         await state.clear()
@@ -369,5 +351,5 @@ async def intervals_info(callback_query: types.CallbackQuery, state: FSMContext)
     markup = buider.as_markup()
     await callback_query.message.edit_text("👉 интервалы ≠ 0\n \n👉 интервалы - целые числа\n"
                                            "\n👉 интервалы не могут быть больше 100\n"
-                                           "\nЖду ваших интервалов ↓", reply_markup=markup)
+                                           "\nВведите ваши интервалы ↓", reply_markup=markup)
 

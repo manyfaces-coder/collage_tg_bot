@@ -1,30 +1,28 @@
 import asyncio
+import os
 
 from states import Broadcast
 from aiogram import Router, F, types
 from dotenv import load_dotenv, find_dotenv
 from aiogram.fsm.context import FSMContext
 from bot_script_webhook import ADMIN_ID, bot
-from keyboards import cancel_btn
-from inline_keyboards import admin_kb
+from keyboards import main_contact_kb
+from inline_keyboards import admin_kb, cancel_btn
 from aiogram.types import CallbackQuery
 from utils.db import get_all_users, get_db_pool
 from aiogram.enums import ContentType
 
 
 load_dotenv(find_dotenv())
-
+admin_command = os.getenv('admin_command')
 router = Router(name=__name__)
 
 
-# @router.message(F.from_user.id.in_({ADMIN_ID}), F.text == administrator_request)
-# async def secret_admin_message(message: types.Message):
-#     await message.reply(answer_for_admin)
-
-
 # Получить список админских действий (админ панель)
-@router.message((F.from_user.id == ADMIN_ID) & (F.text == '⚙️ АДМИНКА'))
+@router.message((F.from_user.id == ADMIN_ID) & (F.text == admin_command))
 async def admin_handler(message: types.Message):
+    # одноразовый вызов клавиатуры
+    # await message.answer("Клавиатура:", reply_markup=main_contact_kb(message.from_user.id))
     await message.answer('Вам открыт доступ в админку! Выберите действие👇', reply_markup=admin_kb())
 
 
@@ -36,18 +34,18 @@ async def admin_users_handler(call: CallbackQuery):
 
     users_data = await get_all_users(pool)
 
-    text = f'В базе данных {len(users_data)}. Вот информация по ним:\n\n'
+    text = f'В базе данных {len(users_data)}.\nВот информация по ним:\n\n'
 
     for user in users_data:
         text += f'<code>{user["telegram_id"]}|{user["first_name"]}|{user["username"]}</code>\n'
 
-    await call.message.answer(text, reply_markup=admin_kb())
+    await call.message.edit_text(text, reply_markup=admin_kb())
 
 
 @router.callback_query((F.from_user.id == ADMIN_ID) & (F.data == 'admin_broadcast'))
 async def admin_broadcast_handler(call: CallbackQuery, state: FSMContext):
     await call.answer()
-    await call.message.answer(
+    await call.message.edit_text(
         'Отправьте любое сообщение, а я его перехвачу и перешлю всем пользователям с базы данных',
         reply_markup=cancel_btn()
     )
@@ -63,10 +61,10 @@ async def universe_broadcast(message: types.Message, state: FSMContext):
     # Определяем параметры для рассылки в зависимости от типа сообщения
     content_type = message.content_type
 
-    if content_type == ContentType.TEXT and message.text == '❌ Отмена':
-        await state.clear()
-        await message.answer('Рассылка отменена!', reply_markup=admin_kb())
-        return
+    # if content_type == ContentType.TEXT and message.text == '❌ Отмена':
+    #     await state.clear()
+    #     await message.edit_text('Рассылка отменена!', reply_markup=admin_kb())
+    #     return
 
     await message.answer(f'Начинаю рассылку на {len(users_data)} пользователей.')
 

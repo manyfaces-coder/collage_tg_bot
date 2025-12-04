@@ -10,10 +10,10 @@ trash
 .env
 venv
 virtualenv
-admin_functions.py
 keyboards.py
 bot.db
 backups/*
 servers.conf
 backup.sql
-pgdata
+pgdata/
+.idea/

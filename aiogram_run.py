@@ -12,6 +12,7 @@ import socket
 import asyncio
 
 SERVERS = (os.getenv("SERVERS").replace(" ", "")).split(',')
+USE_WEBHOOK=os.getenv("USE_WEBHOOK", "true").lower() == "true"
 
 # Функция для установки командного меню для бота
 async def set_commands():
@@ -33,10 +34,15 @@ async def on_startup() -> None:
     await initialize_database(pool)  # Передаем pool в initialize_database()
 
     # Устанавливаем вебхук для приема сообщений через заданный URL
-    await bot.set_webhook(f"{BASE_URL}{WEBHOOK_PATH}")
+    if USE_WEBHOOK:
+        await bot.set_webhook(f"{BASE_URL}{WEBHOOK_PATH}")
+        status = "Бот запущен как главный узел (webhook включен)"
 
-    # Отправляем сообщение администратору о том, что бот был запущен
-    await bot.send_message(chat_id=ADMIN_ID, text='Бот запущен!')
+    else:
+        status = "Бот запущен как рабочий узел без установки вебхука"
+        # Отправляем сообщение администратору о том, что бот был запущен
+
+    await bot.send_message(chat_id=ADMIN_ID, text=status)
 
 
 async def is_any_server_alive():
@@ -62,11 +68,14 @@ async def on_shutdown() -> None:
     # await bot.send_message(chat_id=ADMIN_ID, text='Бот остановлен!')
     # Удаляем вебхук и, при необходимости, очищаем ожидающие обновления
     # await bot.delete_webhook(drop_pending_updates=True)
-    if await is_any_server_alive():
-        print("🔄 Есть работающие серверы, не удаляем вебхук.")
+    if USE_WEBHOOK:
+        if await is_any_server_alive():
+            print("🔄 Есть работающие серверы, не удаляем webhook")
+        else:
+            print("🛑 Все серверы выключены, удаляем webhook!")
+            await bot.delete_webhook(drop_pending_updates=True)
     else:
-        print("🛑 Все серверы выключены, удаляем вебхук!")
-        await bot.delete_webhook(drop_pending_updates=True)
+        print("⬇ Рабочий узел останавливается, вебхук не трогаем")
     # await db_backup()
     await bot.send_message(chat_id=ADMIN_ID, text=f'Бот {socket.gethostname()} остановлен!')
     # Закрываем сессию бота, освобождая ресурсы

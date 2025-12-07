@@ -42,7 +42,6 @@ async def handle_start(message: types.Message):
     # Получаем данные пользователя
     user_data = await get_user_by_id(pool, user_id)
 
-    # if await custom_redis.is_flood(user_id=str(message.from_user.id), interval=1):
     if await custom_redis.is_flood(user_id=str(message.from_user.id)):
         await message.answer(text='Вы слишком часто отправляете сообщения. Подождите немного!')
         return
@@ -63,7 +62,6 @@ async def handle_start(message: types.Message):
 
     else:
         # Иначе показываем клавиатуру с каналами для подписки
-        # markup = subscribe_inline_keyboard(message.from_user.id)
         await message.answer(
             f'Привет, {message.from_user.full_name}!\n\n'
             'Для работы с ботом необходимо подписаться на канал:',
@@ -76,20 +74,6 @@ async def handle_start(message: types.Message):
 @router.message(Command("help", prefix="/"))
 async def handle_help(message: types.Message):
     await message.answer(text=f"Задайте вопрос ему: @oljick13")
-
-# Прислать инструкцию по боту
-@router.message(Command("example_collage", prefix="/"))
-async def show_example_cmd(message: types.Message):
-    media = [
-        InputMediaVideo(
-            media=EXAMPLE_VIDEO_ID,
-            caption=HOW_IT_WORKS_TEXT,
-            parse_mode="HTML",
-        ),
-        InputMediaPhoto(media=BEFORE_IMAGE_ID),
-        InputMediaPhoto(media=AFTER_IMAGE_ID),
-    ]
-    await message.answer_media_group(media)
 
 
 @router.callback_query(F.data == 'check_subscription')
@@ -166,7 +150,9 @@ async def is_user_subscribed(channel_url: str, telegram_id: int) -> bool:
 @router.callback_query(F.data == "next_inline_kb")
 async def handle_already_sub_edited(callback_query: CallbackQuery):
     if await check_sub(callback_query.message, user=callback_query.from_user.id):
-        await update_bot_open_status(telegram_id=callback_query.from_user.id, bot_open=True)
+        # Получаем пул соединений
+        pool = await get_db_pool()
+        await update_bot_open_status(pool, telegram_id=callback_query.from_user.id, bot_open=True)
         await callback_query.answer(
             text=(
                 "СПАСИБО 🤝"
@@ -179,3 +165,28 @@ async def handle_already_sub_edited(callback_query: CallbackQuery):
         )
 
 
+# инструкция по работе бота
+async def send_example(message: types.Message):
+    media = [
+        InputMediaVideo(
+            media=EXAMPLE_VIDEO_ID,
+            caption=HOW_IT_WORKS_TEXT,
+            parse_mode="HTML",
+        ),
+        InputMediaPhoto(media=BEFORE_IMAGE_ID),
+        InputMediaPhoto(media=AFTER_IMAGE_ID),
+    ]
+    await message.answer_media_group(media)
+
+
+# Прислать инструкцию по команде
+@router.message(Command("example_collage", prefix="/"))
+async def show_example_cmd(message: types.Message):
+    await send_example(message)
+
+
+# Прислать инструкцию по кнопке
+@router.callback_query(F.data == "example_collage")
+async def show_example_cb(callback_query: types.CallbackQuery):
+    await callback_query.answer()
+    await send_example(callback_query.message)

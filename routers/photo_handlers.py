@@ -131,6 +131,7 @@ async def make_collage(data: dict, vertical_interval=30, horizontal_interval=30)
 
     await bot.send_chat_action(chat_id=chat_id, action="upload_photo")
 
+    tmp_dir = None
     try:
         # Загрузка фото
         photo, tmp_dir = await download_photo(file_id)
@@ -160,10 +161,11 @@ async def make_collage(data: dict, vertical_interval=30, horizontal_interval=30)
 
     except CollageException:
         # await message.reply("Изображение обработано!\n\nЧто дальше?", reply_markup=main_inline_kb())
-        await bot.send_photo(chat_id=message.chat.id,
+        await bot.send_photo(chat_id=chat_id,
                              photo=FSInputFile(path='main_images/murzik.jpg'),
                              caption="Извините, произошла какая-то ошибка "
                                      "при обработке фото, мой кот тоже не в восторге :(")
+
     except VerticalIntervalException as exp:
         # await message.reply(str(exp))
         await bot.send_message(chat_id=chat_id, text=str(exp))
@@ -176,7 +178,8 @@ async def make_collage(data: dict, vertical_interval=30, horizontal_interval=30)
         # await message.reply(f"Ошибка обработки")
         await bot.send_message(chat_id=chat_id, text=str(exp))
     finally:
-        tmp_dir.cleanup()
+        if tmp_dir is not None:
+            tmp_dir.cleanup()
 
 
 

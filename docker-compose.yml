@@ -38,9 +38,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: bot_db
-      POSTGRES_USER: bot_user
-      POSTGRES_PASSWORD: bot_password
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data  # Хранение БД
       - ./backups:/backups  # Хранение резервных копий
